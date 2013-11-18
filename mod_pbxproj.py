@@ -352,11 +352,16 @@ class PBXGroup(PBXType):
 
 
 class PBXNativeTarget(PBXType):
-    pass
+    def modify_files(self, files):
+        self['files'] = files
+        return True
 
 
 class PBXProject(PBXType):
-    pass
+    def get_targets(self):
+        base = 'targets'
+        if base in self:
+            return self[base]
 
 
 class PBXContainerItemProxy(PBXType):
@@ -552,6 +557,36 @@ class XCBuildConfiguration(PBXType):
 
         return modified
 
+    def add_targeted_device_family(self, family):
+        modified = False
+
+        base = 'buildSettings'
+        key = 'TARGETED_DEVICE_FAMILY'
+
+        if base in self:
+            if key in self[base]:
+                return False
+            else:
+                self[base][key] = family
+                modified = True
+
+        return modified
+
+    def remove_targeted_device_family(self):
+        modified = False
+
+        base = 'buildSettings'
+        key = 'TARGETED_DEVICE_FAMILY'
+
+        if base in self:
+            if key not in self[base]:
+                return False
+            else:
+                self[base].remove(key)
+                modified = True
+
+        return modified
+
 
 class XCConfigurationList(PBXType):
     pass
@@ -632,6 +667,37 @@ class XcodeProject(PBXDict):
 
                 # TODO: need to return value if project has been modified
 
+    def add_targeted_device_family(self, family):
+        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+        for b in build_configs:
+            if b.add_targeted_device_family(family):
+                self.modified = True
+
+    def remove_targeted_device_family(self):
+        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+        for b in build_configs:
+            if b.remove_targeted_device_family():
+                self.modified = True
+
+
+    def get_targets(self):
+        build_configs = [b for b in self.objects.values() if b.get('isa') == 'PBXProject']
+
+        targets = None
+
+        for b in build_configs:
+            targets = b.get_targets()
+
+        return targets
+
+    def modify_files(self, target, files):
+        target_obj = self.get_obj(target)
+        
+        if target_obj.modify_files(files):
+            self.modified = True
+            
     def get_obj(self, id):
         return self.objects.get(id)
 
