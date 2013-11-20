@@ -587,6 +587,19 @@ class XCBuildConfiguration(PBXType):
 
         return modified
 
+    def change_product_name(self, name):
+        modified = False
+
+        base = 'buildSettings'
+        key = 'PRODUCT_NAME'
+
+        if base in self:
+            if key in self[base]:
+                self[base][key] = name
+                modified = True
+
+        return modified
+
 
 class XCConfigurationList(PBXType):
     pass
@@ -681,6 +694,12 @@ class XcodeProject(PBXDict):
             if b.remove_targeted_device_family():
                 self.modified = True
 
+    def change_product_name(self, name):
+        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+        for b in build_configs:
+            if b.change_product_name(name):
+                self.modified = True
 
     def get_targets(self):
         build_configs = [b for b in self.objects.values() if b.get('isa') == 'PBXProject']
