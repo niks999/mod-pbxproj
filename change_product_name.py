@@ -23,4 +23,4 @@ if project.modified:
 	project.backup()
 	project.saveFormat3_2()
 
-print "successfully changed product name"
+print "Successfully changed Product Name to :", new_product_name
