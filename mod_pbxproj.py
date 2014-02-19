@@ -600,6 +600,24 @@ class XCBuildConfiguration(PBXType):
 
         return modified
 
+    def change_code_sign_identity(self, name):
+        modified = False
+
+        base = 'buildSettings'
+        key1 = 'CODE_SIGN_IDENTITY'
+        key2 = 'CODE_SIGN_IDENTITY[sdk=iphoneos*]'
+
+        if base in self:
+            if key1 in self[base]:
+                self[base][key1] = name
+                modified = True
+
+            if key2 in self[base]:
+                self[base][key2] = name
+                modified = True
+
+        return modified
+
 
 class XCConfigurationList(PBXType):
     pass
@@ -699,6 +717,13 @@ class XcodeProject(PBXDict):
 
         for b in build_configs:
             if b.change_product_name(name):
+                self.modified = True
+
+    def change_code_sign_identity(self, name):
+        build_configs = [b for b in self.objects.values() if b.get('isa') == 'XCBuildConfiguration']
+
+        for b in build_configs:
+            if b.change_code_sign_identity(name):
                 self.modified = True
 
     def get_targets(self):
